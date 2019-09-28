@@ -7,4 +7,4 @@ Each customer reading was converted to a sequence. Noisy readings were labeled a
 Common distance algorithms such as Euclidean and Manhattan distance was not appropriate for sequential data. Instead, the Optimal Matching (OM), the Longest Common Prefix (LCP) and the Longest Common Subsequence (LCS) distances were used.
 
 
-![Shop Layout](https://github.com/SakibShahriar95/coffee-shop-clustering/Coffee Shop Layout.png)
+![Shop Layout](https://github.com/SakibShahriar95/coffee-shop-clustering/blob/master/Coffee%20Shop%20Layout.png)
