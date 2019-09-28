@@ -1,0 +1,197 @@
+---
+title: "Clustering Coffee Shop Customer Behavior"
+author: "Sakib Shahriar"
+date: "September 28, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Necessary Libraries
+```{r }
+library(TraMineR)
+library(cluster)
+library(dbscan)
+library(clusterCrit)
+library(ClusterR)
+```
+
+
+## Read Data and Create State Sequence Object
+
+
+```{r }
+cafeData <- read.csv(file = "User_Sequence_Data.csv", header = TRUE)
+head(cafeData,3) #Print first 3 obsercations
+dim(cafeData) #Im using 2000 observations here
+
+#Create labels for the sequence object
+cafeData.seq.labels <- c("BookShelf", "PS4", "Counter", "Side1", "Side2", "Business", "Corner")
+#create a sequence object, the sequence appears from 2-31st column
+cafeData.seq <- seqdef(cafeData, var = 2:31, labels = cafeData.seq.labels)
+coffeecc <- seqsubm(cafeData.seq, method = "TRATE")
+
+TrueLabels = as.integer(cafeData$Behaviour) #Extract the ground truth labels as integers
+```
+
+
+
+## Generating the distance matrices
+
+
+```{r }
+#Compute Optimal Matching, Lowest common prefix, Lowest Common Subsequence distance matrix
+coffee.OM <- seqdist(cafeData.seq, method = "OM", sm = coffeecc)
+coffee.LCP <- seqdist(cafeData.seq, method = "LCP")
+coffee.LCS <- seqdist(cafeData.seq, method = "LCS")
+
+```
+
+
+## Hierarchical clustering using OM
+
+
+```{r }
+clusterward <- agnes(coffee.OM, diss = TRUE, method = "ward")
+cluster6.OM <- cutree(clusterward, k = 8) #cluster membership
+table(cluster6.OM) #Check cluster assignment
+
+
+#Internal and External Validation
+intCriteria(coffee.OM,as.integer(cluster6.OM),c("Silhouette","Calinski_Harabasz","Dunn")) 
+external_validation(TrueLabels, as.integer(cluster6.OM), method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, as.integer(cluster6.OM), method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, as.integer(cluster6.OM), method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+
+
+
+## Hierarchical clustering using LCP
+
+
+```{r }
+clusterward.LCP <- agnes(coffee.LCP, diss = TRUE, method = "ward")
+cluster6.LCP <- cutree(clusterward.LCP, k = 8) #cluster membership
+table(cluster6.LCP)
+
+#Internal and External Validation
+intCriteria(coffee.LCP,as.integer(cluster6.LCP),c("Silhouette","Calinski_Harabasz","Dunn"))
+external_validation(TrueLabels, cluster6.LCP, method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, cluster6.LCP, method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, cluster6.LCP, method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+
+
+## Hierarchical clustering using LCS
+
+
+```{r }
+clusterward.LCS <- agnes(coffee.LCS, diss = TRUE, method = "ward")
+cluster6.LCS <- cutree(clusterward.LCS, k = 8) #cluster membership
+tbleLCS <- table(cluster6.LCS)
+
+intCriteria(coffee.LCS,as.integer(cluster6.LCS),c("Silhouette","Calinski_Harabasz","Dunn"))
+external_validation(TrueLabels, cluster6.LCS, method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, cluster6.LCS, method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, cluster6.LCS, method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+
+## K-Medoids clustering using OM
+
+
+```{r }
+K_Med.OM <- pam(coffee.OM, 8, diss = TRUE)
+table(K_Med.OM$clustering)
+
+intCriteria(coffee.OM,K_Med.OM$clustering,c("Silhouette","Calinski_Harabasz","Dunn"))
+external_validation(TrueLabels, K_Med.OM$clustering, method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, K_Med.OM$clustering, method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, K_Med.OM$clustering, method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+
+## K-Medoids clustering using LCP
+
+
+```{r }
+K_Med.LCP <- pam(coffee.LCP, 8, diss = TRUE)
+table(K_Med.LCP$clustering)
+
+intCriteria(coffee.LCP,K_Med.LCP$clustering,c("Silhouette","Calinski_Harabasz","Dunn"))
+external_validation(TrueLabels, K_Med.LCP$clustering, method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, K_Med.LCP$clustering, method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, K_Med.LCP$clustering, method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+
+
+
+## K-Medoids clustering using LCS
+
+
+```{r }
+K_Med.LCS <- pam(coffee.LCS, 8, diss = TRUE)
+table(K_Med.LCS$clustering)
+
+intCriteria(coffee.LCS,K_Med.LCS$clustering,c("Silhouette","Calinski_Harabasz","Dunn"))
+external_validation(TrueLabels, K_Med.LCS$clustering, method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, K_Med.LCS$clustering, method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, K_Med.LCS$clustering, method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+
+
+## DBSCAN clustering using OM
+
+
+```{r }
+dbscan::kNNdistplot(coffee.OM, k =  15)
+db.OM<-dbscan(coffee.OM, MinPts = 15,eps= 240 )
+table(db.OM$cluster)
+
+intCriteria(coffee.OM,as.integer(db.OM$cluster),c("Silhouette","Calinski_Harabasz","Dunn"))
+external_validation(TrueLabels, db.OM$cluster, method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, db.OM$cluster, method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, db.OM$cluster, method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+
+
+## DBSCAN clustering using LCP
+
+
+```{r }
+dbscan::kNNdistplot(coffee.LCP, k =  15)
+db.LCP<-dbscan(coffee.LCP, MinPts = 15,eps= 89 )
+table(db.LCP$cluster)
+
+
+intCriteria(coffee.LCP,as.integer(db.LCP$cluster),c("Silhouette","Calinski_Harabasz","Dunn"))
+external_validation(TrueLabels, db.LCP$cluster, method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, db.LCP$cluster, method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, db.LCP$cluster, method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+
+
+## DBSCAN clustering using LCS
+
+
+```{r }
+dbscan::kNNdistplot(coffee.LCS, k =  15)
+db.LCS<-dbscan(coffee.LCS, MinPts = 15,eps= 250 )
+table(db.LCS$cluster)
+
+intCriteria(coffee.LCS,as.integer(db.LCS$cluster),c("Silhouette","Calinski_Harabasz","Dunn"))
+external_validation(TrueLabels, db.LCS$cluster, method = "purity", summary_stats = FALSE)
+external_validation(TrueLabels, db.LCS$cluster, method = "entropy", summary_stats = FALSE)
+external_validation(TrueLabels, db.LCS$cluster, method = "adjusted_rand_index", summary_stats = FALSE)
+
+```
+#END
